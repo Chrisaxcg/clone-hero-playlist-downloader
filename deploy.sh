@@ -22,7 +22,7 @@ if [ -d "$APP_DIR/.git" ]; then
   git -C "$APP_DIR" pull --ff-only
 else
   # Replace with your actual repo URL once you push to GitHub/GitLab
-  git clone https://github.com/YOUR_USER/clone-hero-playlist-downloader.git "$APP_DIR"
+  git clone https://github.com/Chrisaxcg/clone-hero-playlist-downloader.git "$APP_DIR"
 fi
 
 cd "$APP_DIR"
