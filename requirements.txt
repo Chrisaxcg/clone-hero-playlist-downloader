@@ -1,0 +1,11 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+httpx==0.28.1
+spotipy==2.24.0
+beautifulsoup4==4.13.4
+thefuzz==0.22.1
+aiofiles==24.1.0
+python-dotenv==1.1.0
+pydantic-settings==2.8.1
+python-multipart==0.0.20
+slowapi==0.1.9

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "clone-hero-downloader",
+      "runtimeExecutable": "venv\\Scripts\\python",
+      "runtimeArgs": ["run.py"],
+      "port": 8000
+    }
+  ]
+}

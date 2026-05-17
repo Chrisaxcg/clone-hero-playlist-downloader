@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clone Hero Playlist Downloader</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎸 Clone Hero Playlist Downloader</h1>
+      <p class="subtitle">Pega el link de una playlist pública de Spotify o Apple Music — sin login ni API keys</p>
+    </header>
+
+    <!-- Fase 1: Input -->
+    <section id="phase-input" class="card">
+      <label for="playlist-url">Link de playlist</label>
+      <div class="input-row">
+        <input
+          id="playlist-url"
+          type="text"
+          placeholder="https://open.spotify.com/playlist/... o https://music.apple.com/..."
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button id="btn-load" class="btn btn-primary">Cargar playlist</button>
+      </div>
+      <div id="source-badge" class="source-badge hidden"></div>
+      <div id="input-error" class="error-msg hidden"></div>
+    </section>
+
+    <!-- Fase 2: Resultados de búsqueda -->
+    <section id="phase-results" class="hidden">
+      <div class="results-header">
+        <div>
+          <span id="playlist-name" class="playlist-name"></span>
+          <span id="results-summary" class="results-summary"></span>
+        </div>
+        <div class="results-actions">
+          <button id="btn-select-all" class="btn btn-sm">Seleccionar encontradas</button>
+          <button id="btn-deselect-all" class="btn btn-sm">Quitar selección</button>
+          <button id="btn-download" class="btn btn-success" disabled>
+            Descargar seleccionadas (<span id="selected-count">0</span>)
+          </button>
+        </div>
+      </div>
+
+      <div class="search-status">
+        <div id="search-progress-bar" class="search-progress-bar">
+          <div id="search-progress-fill" style="width:0%"></div>
+        </div>
+        <span id="search-status-text">Buscando canciones…</span>
+      </div>
+
+      <div class="table-wrapper">
+        <table id="results-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="chk-all" title="Seleccionar todo" /></th>
+              <th>Canción</th>
+              <th>Artista</th>
+              <th>Chart encontrado</th>
+              <th>Charter</th>
+              <th>Fuente</th>
+              <th>Instrumentos</th>
+              <th>Match</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Fase 3: Preparando ZIP -->
+    <section id="phase-download" class="hidden card">
+      <div id="zip-preparing">
+        <div class="zip-spinner-row">
+          <div class="spinner"></div>
+          <span id="zip-status-text">Preparando descarga…</span>
+        </div>
+        <div class="search-progress-bar" style="margin-top:12px">
+          <div id="zip-progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div id="zip-done" class="hidden">
+        <p class="zip-done-msg">ZIP listo — la descarga debería comenzar automáticamente.</p>
+        <button id="btn-restart" class="btn btn-primary" style="margin-top:12px">
+          Nueva búsqueda
+        </button>
+      </div>
+      <div id="zip-error" class="error-msg hidden"></div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
