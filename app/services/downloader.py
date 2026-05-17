@@ -1,52 +1,57 @@
-import asyncio
-import io
-import os
 import re
-import zipfile
 import httpx
+import zipstream
+
 from app.models.schemas import SearchResult
 
 _UNSAFE_CHARS = re.compile(r'[<>:"/\\|?*]')
-_MAX_CONCURRENT = asyncio.Semaphore(4)   # max 4 ZIPs simultáneos
 
 
 def _safe_name(name: str) -> str:
     return _UNSAFE_CHARS.sub("_", name).strip()[:80]
 
 
-async def build_zip(
-    results: list[SearchResult],
-    on_progress=None,          # callback(done, total, song_label)
-) -> bytes:
+def _download_source(url: str):
     """
-    Descarga los .sng seleccionados y los empaqueta en un ZIP en memoria.
-    Retorna los bytes del ZIP.
+    Generador SÍNCRONO: descarga un archivo .sng y lo cede en un chunk.
+    zipstream lo llama de forma lazy — solo cuando toca ese archivo en el ZIP.
+    Así el pico de RAM es ~1 archivo a la vez (~20 MB) sin importar el tamaño
+    de la playlist.
+    """
+    try:
+        with httpx.Client(
+            timeout=httpx.Timeout(connect=5, read=30, write=5, pool=5),
+            follow_redirects=True,
+        ) as client:
+            resp = client.get(url)
+            resp.raise_for_status()
+            yield resp.content
+    except Exception:
+        return  # Archivo omitido en silencio si falla la descarga
+
+
+def build_zip_stream(results: list[SearchResult]):
+    """
+    Generador SÍNCRONO que produce el ZIP en streaming byte a byte.
+
+    Ventajas frente al enfoque anterior (BytesIO):
+      - Sin acumular todo en RAM — pico de ~20 MB sin importar cuántas canciones.
+      - El browser empieza a recibir datos inmediatamente.
+      - FastAPI/Starlette corre generadores síncronos en un threadpool,
+        por lo que no bloquea el event loop de asyncio.
+
+    Estructura del ZIP:
+      Artista/
+        Cancion.sng   ← Clone Hero los lee nativamente, sin extraer nada
     """
     downloadable = [r for r in results if r.found and r.download_url]
-    total = len(downloadable)
-    buf = io.BytesIO()
 
-    async with _MAX_CONCURRENT:
-        with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
-            async with httpx.AsyncClient(timeout=180, follow_redirects=True) as client:
-                for i, result in enumerate(downloadable, 1):
-                    artist = _safe_name(result.track.artist)
-                    song = _safe_name(result.track.name)
-                    arcname = f"{artist}/{song}.sng"
+    zs = zipstream.ZipStream(compress_type=zipstream.ZIP_STORED)
 
-                    try:
-                        resp = await client.get(result.download_url)
-                        resp.raise_for_status()
-                        zf.writestr(arcname, resp.content)
-                    except Exception as exc:
-                        # Añadir un archivo de texto de error en lugar del .sng
-                        zf.writestr(
-                            f"{artist}/{song}_ERROR.txt",
-                            f"Error al descargar: {exc}\nURL: {result.download_url}",
-                        )
+    for result in downloadable:
+        artist  = _safe_name(result.track.artist)
+        song    = _safe_name(result.track.name)
+        arcname = f"{artist}/{song}.sng"
+        zs.add(_download_source(result.download_url), arcname)
 
-                    if on_progress:
-                        await on_progress(i, total, f"{result.track.artist} - {result.track.name}")
-
-    buf.seek(0)
-    return buf.read()
+    yield from zs

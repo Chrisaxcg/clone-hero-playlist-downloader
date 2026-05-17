@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -14,7 +14,7 @@ from slowapi.util import get_remote_address
 
 from app.models.schemas import DownloadRequest, PlaylistResponse, SearchResult
 from app.services import apple_music, enchor, rhythmverse, spotify
-from app.services.downloader import build_zip
+from app.services.downloader import build_zip_stream
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
@@ -114,13 +114,8 @@ async def download_zip(req: DownloadRequest, request: Request):
             detail="Máximo 60 canciones por descarga. Selecciona menos canciones.",
         )
 
-    try:
-        zip_bytes = await build_zip(downloadable)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error creando ZIP: {e}")
-
-    return Response(
-        content=zip_bytes,
+    return StreamingResponse(
+        build_zip_stream(downloadable),
         media_type="application/zip",
         headers={"Content-Disposition": 'attachment; filename="clone_hero_songs.zip"'},
     )

@@ -9,3 +9,4 @@ python-dotenv==1.1.0
 pydantic-settings==2.8.1
 python-multipart==0.0.20
 slowapi==0.1.9
+zipstream-ng==1.9.0
